@@ -1,0 +1,154 @@
+#!/usr/bin/env bash
+
+set -e
+
+curl="/usr/bin/curl"
+command="none"
+shellmode=false
+WebAPI_JP_base="https://covid19-japan-web-api.now.sh/api/v1"
+
+declare -A WebAPI_JP=(
+    # 都道府県別のデータ
+    ["prefectures"]="${WebAPI_JP_base}/prefectures"
+
+    # 全国の合計
+    ["total"]="${WebAPI_JP_base}/total"
+
+    # 全国の合計の履歴
+    ["total history"]="${WebAPI_JP_base}/total?history=true"
+
+    # 今後の予測
+    ["total prediction"]="${WebAPI_JP_base}/total?predict=true"
+
+    # 感染者データ
+    ["positives"]="${WebAPI_JP_base}/positives?prefecture=%s"
+
+    # 感染者の統計データ
+    ["statistics"]="${WebAPI_JP_base}/statistics"
+)
+
+get_json() {
+    "${curl}" -Ls "${1}"
+}
+
+prefectures_list_ja=($(get_json "${WebAPI_JP["prefectures"]}" | jq -r ".[].name_ja" ))
+prefectures_list_en=($(get_json "${WebAPI_JP["prefectures"]}" | jq -r ".[].name_en" ))
+
+_help() {
+    echo "使い方 ${0} [コマンド] [オプション]"
+    echo
+    echo " コマンド:"
+    echo "    total    | --total                全国の合計を取得します"
+    echo "    posi     | --positives <県名>      県別で感染者のデータを取得します"
+    echo "    help     | --help | -h            このヘルプを表示します"
+    echo
+    echo " オプション:"
+    echo "    -s | --shell                      シェル形式で出力します"
+}
+
+set_command() {
+    if [[ ! -v 1 ]]; then
+        echo "コマンドを指定してください"
+        exit 1
+    fi
+    if [[ "${command}" = "none" ]]; then
+        command="${1}"
+    else
+        echo "コマンドの複数指定はできません"
+        exit 1
+    fi
+}
+
+positives() {
+    echo "None"
+    return 0
+}
+
+total() {
+    local _json="$(get_json "${WebAPI_JP["total"]}")"
+    local _key
+    for _key in $(echo "${_json}" | jq -r 'keys | .[]'); do
+        eval ${_key}="$(echo "${_json}" | jq -r ".${_key}")"
+    done
+
+    echo "${_json}"
+
+    # 日付を変換
+    date="$(date -d "${date}" +'%Y年%m月%d日')"
+
+    echo "日付: ${date}"
+    echo "重傷者: ${severe}"
+    echo "死亡者: ${death}"
+
+}
+
+
+# Parse options
+ARGUMENT="${@}"
+opt_short="sh"
+opt_long="total,positives:,help,shell"
+OPT=$(getopt -o ${opt_short} -l ${opt_long} -- ${ARGUMENT})
+[[ ${?} != 0 ]] && exit 1
+
+eval set -- "${OPT}"
+unset OPT opt_short opt_long
+
+while true; do
+    case "${1}" in
+        --total)
+            set_command "total"
+            shift 1
+            ;;
+        --positives)
+            set_command "positives"
+            if printf '%s\n' "${prefectures_list_en[@]}" | grep -qx "${2}" 1>/dev/null 2>/dev/null || printf '%s\n' "${prefectures_list_ja[@]}" | grep -qx "${2}" 1>/dev/null 2>/dev/null; then
+                prefecture_name="${2}"
+            else
+                exit 1
+            fi
+            shift 1
+            ;;
+        -s | --shell)
+            shellmode=true
+            shift 1
+            ;;
+        -h | --help)
+            _help
+            exit 0
+            ;;
+        --)
+            shift 1
+            break
+            ;;
+
+    esac
+done
+
+if [[ -z "${1}" ]] && [[ "${command}" = "none" ]] ; then
+    _help
+    exit 1
+fi
+
+if [[ "${command}" = "none" ]]; then
+    case "${1}" in
+        "total")
+            set_command "total"
+            shift 1
+            ;;
+        "posi")
+            set_command "positives"
+            if printf '%s\n' "${prefectures_list_en[@]}" | grep -qx "${2}" 1>/dev/null 2>/dev/null || printf '%s\n' "${prefectures_list_ja[@]}" | grep -qx "${2}" 1>/dev/null 2>/dev/null; then
+                prefecture_name="${2}"
+            else
+                exit 1
+            fi
+            shift 1
+            ;;
+        *)
+            exit 1
+            ;;
+    esac
+fi
+
+
+"${command}"
