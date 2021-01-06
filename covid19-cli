@@ -117,9 +117,9 @@ while true; do
             ;;
         --positives)
             set_command "positives"
-            if printf '%s\n' "${prefectures_list_en[@]}" | grep -qx "${2}" 1>/dev/null 2>/dev/null || printf '%s\n' "${prefectures_list_ja[@]}" | grep -qx "${2}" 1>/dev/null 2>/dev/null; then
-                prefecture_name="${2}"
-            else
+            prefecture_name="${2%県}県"
+            if ! printf '%s\n' "${prefectures_list_ja[@]}" | grep -qx "${prefecture_name%県}" 1>/dev/null 2>/dev/null; then
+                echo "不明な県名です" >&2
                 exit 1
             fi
             shift 1
@@ -157,9 +157,9 @@ if [[ "${command}" = "none" ]]; then
             ;;
         "posi")
             set_command "positives"
-            if printf '%s\n' "${prefectures_list_en[@]}" | grep -qx "${2}" 1>/dev/null 2>/dev/null || printf '%s\n' "${prefectures_list_ja[@]}" | grep -qx "${2}" 1>/dev/null 2>/dev/null; then
-                prefecture_name="${2}"
-            else
+            prefecture_name="${2%県}県"
+            if ! printf '%s\n' "${prefectures_list_ja[@]}" | grep -qx "${prefecture_name%県}" 1>/dev/null 2>/dev/null; then
+                echo "不明な県名です" >&2
                 exit 1
             fi
             shift 1
