@@ -73,7 +73,7 @@ total() {
         eval ${_key}="$(echo "${_json}" | jq -r ".${_key}")"
     done
 
-    echo "${_json}"
+    #echo "${_json}"
 
     # 日付を変換
     date="$(date -d "${date}" +'%Y年%m月%d日')"
