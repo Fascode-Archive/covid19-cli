@@ -62,12 +62,19 @@ set_command() {
 }
 
 positives() {
-    echo "None"
-    return 0
+    local _json="$(get_json "$(printf "${WebAPI_JP["positives"]}" "${prefecture_name}" )")"
+    if [[ "${output}" = "json" ]]; then
+        echo "${_json}"
+    fi
+
 }
 
 total() {
     local _key _json="$(get_json "${WebAPI_JP["total"]}")"
+    if [[ "${output}" = "json" ]]; then
+        echo "${_json}"
+        exit 0
+    fi
     for _key in $(echo "${_json}" | jq -r "keys | .[]"); do
         if [[ "${output}" = "shell" ]]; then
             echo "${_key}="$(echo "${_json}" | jq -r ".${_key}")""
@@ -76,10 +83,6 @@ total() {
         fi
     done
     if [[ "${output}" = "shell" ]]; then
-        exit 0
-    fi
-    if [[ "${output}" = "json" ]]; then
-        echo "${_json}"
         exit 0
     fi
 
