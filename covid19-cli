@@ -70,18 +70,31 @@ total() {
     local _json="$(get_json "${WebAPI_JP["total"]}")"
     local _key
     for _key in $(echo "${_json}" | jq -r 'keys | .[]'); do
-        eval ${_key}="$(echo "${_json}" | jq -r ".${_key}")"
+        if [[ "${output}" = "shell" ]]; then
+            echo "${_key}="$(echo "${_json}" | jq -r ".${_key}")""
+        else
+            eval ${_key}="$(echo "${_json}" | jq -r ".${_key}")"
+        fi
     done
+    if [[ "${output}" = "shell" ]]; then
+        return 0
+    fi
 
     #echo "${_json}"
 
     # 日付を変換
     date="$(date -d "${date}" +'%Y年%m月%d日')"
 
-    echo "日付: ${date}"
-    echo "重傷者: ${severe}"
-    echo "死亡者: ${death}"
-
+    echo "<${date}の新型コロナウイルス感染状況>"
+    echo
+    echo "検査人数: ${pcr}人"
+    echo "入院中　: ${hospitalize}人"
+    echo "感染者数: ${positive}人"
+    echo "重傷者　: ${severe}人"
+    echo "退院者　: ${discharge}人"
+    echo "死亡者　: ${death}人"
+    echo "確認中　: ${symptom_confirming}人"
+    echo "死亡率　: $(awk "BEGIN { print ${death}/${positive}*100}") %"
 }
 
 
