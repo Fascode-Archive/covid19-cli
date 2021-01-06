@@ -67,20 +67,21 @@ positives() {
 }
 
 total() {
-    local _json="$(get_json "${WebAPI_JP["total"]}")"
-    local _key
-    for _key in $(echo "${_json}" | jq -r 'keys | .[]'); do
+    local _key _json="$(get_json "${WebAPI_JP["total"]}")"
+    for _key in $(echo "${_json}" | jq -r "keys | .[]"); do
         if [[ "${output}" = "shell" ]]; then
             echo "${_key}="$(echo "${_json}" | jq -r ".${_key}")""
-        else
+        elif [[ "${output}" = "normal" ]]; then
             eval ${_key}="$(echo "${_json}" | jq -r ".${_key}")"
         fi
     done
     if [[ "${output}" = "shell" ]]; then
-        return 0
+        exit 0
     fi
-
-    #echo "${_json}"
+    if [[ "${output}" = "json" ]]; then
+        echo "${_json}"
+        exit 0
+    fi
 
     # 日付を変換
     date="$(date -d "${date}" +'%Y年%m月%d日')"
@@ -101,7 +102,7 @@ total() {
 # Parse options
 ARGUMENT="${@}"
 opt_short="sh"
-opt_long="total,positives:,help,shell"
+opt_long="total,positives:,help,shell,json"
 OPT=$(getopt -o ${opt_short} -l ${opt_long} -- ${ARGUMENT})
 [[ ${?} != 0 ]] && exit 1
 
@@ -125,6 +126,10 @@ while true; do
             ;;
         -s | --shell)
             output="shell"
+            shift 1
+            ;;
+        --json)
+            output="json"
             shift 1
             ;;
         -h | --help)
