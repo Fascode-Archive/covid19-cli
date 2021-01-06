@@ -4,8 +4,10 @@ set -e
 
 curl="/usr/bin/curl"
 command="none"
-shellmode=false
+output="normal"
 WebAPI_JP_base="https://covid19-japan-web-api.now.sh/api/v1"
+
+# https://corona.go.jp/dashboard/
 
 declare -A WebAPI_JP=(
     # 都道府県別のデータ
@@ -109,7 +111,7 @@ while true; do
             shift 1
             ;;
         -s | --shell)
-            shellmode=true
+            output="shell"
             shift 1
             ;;
         -h | --help)
